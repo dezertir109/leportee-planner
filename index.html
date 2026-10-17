@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Portée Hotel Planner</title>
+<meta name="description" content="What should your hotel add next? A free planner built on 25,000 German Booking.com listings and what actually moves their review scores — for a new property or one you already run.">
+<meta property="og:title" content="What should your hotel add next? — Le Portée Hotel Planner">
+<meta property="og:description" content="Built on 25,000 German Booking.com listings: where a property ranks, what its competitors have, and which additions actually move the score.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://planner.leportee.com/">
+<meta property="og:image" content="https://planner.leportee.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23E2482E'/><text x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='Arial Black,sans-serif'>P</text></svg>">
+<style>
+@font-face{font-family:"Archivo Black";src:url(fonts/ArchivoBlack-Regular.ttf) format("truetype");font-display:swap}
+@font-face{font-family:"Poppins";font-weight:600;src:url(fonts/Poppins-SemiBold.ttf) format("truetype");font-display:swap}
+:root{--paper:#f7f4ed;--card:#fffdf9;--ink:#262422;--mute:#6b665e;--rule:#d9d2c3;
+  --orange:#E2482E;--orange-ink:#b93219;--blush:#fceae8;--on-orange:#fff;
+  --green:#2f5d50;--blue:#355a8a;--amber:#a4671e;--red:#b3261e;
+  --display:"Archivo Black","Arial Black",Impact,sans-serif;--head:"Poppins",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--paper:#1b1917;--card:#252220;--ink:#efe9e2;--mute:#a39a90;--rule:#3a3531;
+  --orange:#f2694f;--orange-ink:#ff8f79;--blush:#3a1f1b;--green:#7fb8a4;--blue:#8fb0e0;--amber:#d29a4b;--red:#ff8a80}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--body)}
+main{max-width:980px;margin:0 auto;padding:26px 16px 72px}
+a{color:inherit}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:40px}
+.brand{font:600 .95rem var(--head);letter-spacing:.42em;text-transform:uppercase;text-decoration:none;color:var(--orange-ink)}
+.cta{font:600 .72rem var(--head);letter-spacing:.14em;text-transform:uppercase;background:var(--orange);color:var(--on-orange);padding:9px 18px;border-radius:999px;text-decoration:none;border:0;cursor:pointer;display:inline-block;transition:transform .15s}
+.cta:hover{transform:rotate(-2deg) scale(1.04)}
+.cta.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+.kicker{font:600 .72rem var(--head);letter-spacing:.3em;text-transform:uppercase;color:var(--mute);margin:0 0 14px}
+h1{font:400 clamp(2.1rem,6.2vw,4rem)/1.04 var(--display);margin:0 0 20px;letter-spacing:-.01em;max-width:17ch}
+h1 mark,h3 mark{background:var(--blush);color:var(--orange-ink);padding:0 .18em;border-radius:.16em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.sub{color:var(--mute);margin:0 0 28px;max-width:62ch;font-size:1.02rem}
+h2{font:400 .95rem var(--display);letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px;display:flex;align-items:center;gap:12px}
+h2::after{content:"";flex:1;border-top:2px dotted var(--rule)}
+h3{font:400 clamp(1.4rem,3.6vw,2rem)/1.15 var(--display);margin:0 0 10px}
+section{margin-bottom:40px}
+#full h2{margin-top:38px}
+#full h2:first-child{margin-top:0}
+.hide{display:none!important}
+/* country chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;align-items:center}
+.chip{border:2px solid var(--ink);background:transparent;color:var(--ink);padding:6px 15px;border-radius:999px;cursor:pointer;font:600 .8rem var(--head);text-decoration:none}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.chip.soon{border-style:dashed;color:var(--mute)}
+.chip.soon:hover{color:var(--orange-ink);border-color:var(--orange)}
+/* mode tiles */
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.mode{position:relative;text-align:left;cursor:pointer;border:2px solid var(--ink);border-radius:12px;background:var(--card);color:var(--ink);padding:20px 20px 18px;transition:transform .12s,box-shadow .12s;font:inherit}
+.mode:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+.mode[aria-pressed=true]{background:var(--orange);color:var(--on-orange);box-shadow:2px 2px 0 var(--ink)}
+.mode b{display:block;font:400 1.35rem/1.15 var(--display);margin-bottom:6px}
+.mode span{font-size:.92rem;opacity:.85}
+/* forms */
+.panel{background:var(--card);border:1px solid var(--rule);border-top:4px double var(--ink);border-radius:4px 4px 10px 10px;padding:20px 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px 18px}
+label{display:flex;flex-direction:column;gap:6px;font:600 .78rem var(--head);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+label small{font:400 .8rem var(--body);text-transform:none;letter-spacing:0}
+input,select{font:inherit;font-size:1rem;padding:10px 12px;border:2px solid var(--ink);border-radius:10px;background:var(--paper);color:var(--ink);min-width:0;width:100%}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.archs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin:6px 0 4px}
+.arch{border:2px solid var(--ink);border-radius:10px;background:var(--paper);color:var(--ink);padding:10px 12px;text-align:left;cursor:pointer;font:inherit}
+.arch b{display:block;font:600 .9rem var(--head)}
+.arch span{font-size:.8rem;color:var(--mute)}
+.arch[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.arch[aria-pressed=true] span{color:var(--paper);opacity:.8}
+.go{margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hint{color:var(--mute);font-size:.85rem}
+/* search */
+.results{list-style:none;margin:8px 0 0;padding:0;border:2px solid var(--ink);border-radius:10px;overflow:hidden;background:var(--paper)}
+.results li{padding:9px 12px;border-top:1px solid var(--rule);cursor:pointer;display:flex;justify-content:space-between;gap:10px}
+.results li:first-child{border-top:0}
+.results li:hover,.results li[aria-selected=true]{background:var(--blush)}
+.results .c{color:var(--mute);font-size:.85rem;white-space:nowrap}
+.picked{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;background:var(--blush);border:2px dashed color-mix(in srgb,var(--orange) 55%,transparent);border-radius:8px;padding:12px 14px;margin-top:10px}
+.picked b{font:600 1.05rem var(--head)}
+/* result */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:14px 16px}
+.stat .v{font:400 2rem/1.05 var(--display)}
+.stat .l{font:600 .7rem var(--head);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-top:6px}
+.stat .d{font-size:.85rem;margin-top:4px}
+.up{color:var(--green)}.down{color:var(--red)}
+/* score ruler */
+.ruler{position:relative;height:84px;margin:8px 4px 18px}
+.ruler .track{position:absolute;left:0;right:0;top:22px;height:10px;border-radius:999px;background:linear-gradient(90deg,var(--rule),color-mix(in srgb,var(--green) 55%,var(--rule)))}
+.ruler .mk{position:absolute;top:8px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;font:600 .7rem var(--head);white-space:nowrap}
+.ruler .mk i{display:block;width:4px;height:38px;border-radius:2px;background:var(--ink)}
+.ruler .mk.now i{background:var(--ink)} .ruler .mk.new i{background:var(--orange)} .ruler .mk.loc i{background:var(--blue);height:24px;margin-top:7px}
+.ruler .mk em{font-style:normal;position:absolute;top:44px}
+.ruler .ax{position:absolute;top:36px;font-size:.7rem;color:var(--mute);transform:translateX(-50%)}
+/* bars */
+.bars{display:flex;flex-direction:column;gap:7px}
+.bar{display:grid;grid-template-columns:minmax(120px,38%) 1fr auto;gap:10px;align-items:center;font-size:.9rem}
+.bar .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .t{height:14px;background:var(--rule);border-radius:999px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--orange);border-radius:999px}
+.bar .t i.g{background:var(--green)} .bar .t i.b{background:var(--blue)} .bar .t i.r{background:var(--red)} .bar .t i.a{background:var(--amber)}
+.bar .x{font:600 .8rem var(--head);min-width:4.5em;text-align:right}
+.moves{counter-reset:m;display:grid;gap:12px}
+.move{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:12px 16px}
+.move::before{counter-increment:m;content:counter(m);font:400 1.6rem var(--display);color:var(--orange-ink)}
+.move b{font:600 1rem var(--head);display:block}
+.move span{font-size:.85rem;color:var(--mute)}
+.move .e{font:400 1.25rem var(--display);color:var(--green);text-align:right}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{font:600 .68rem var(--head);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:left;border-bottom:2px solid var(--ink);padding:8px 6px}
+td{border-bottom:1px solid var(--rule);padding:8px 6px;vertical-align:top}
+td.num,th.num{text-align:right;white-space:nowrap}
+.tag{display:inline-block;font:600 .62rem var(--head);letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--blush);color:var(--orange-ink);white-space:nowrap}
+.tag.g{background:color-mix(in srgb,var(--green) 16%,var(--card));color:var(--green)}
+.tag.b{background:color-mix(in srgb,var(--blue) 16%,var(--card));color:var(--blue)}
+.tag.m{background:var(--rule);color:var(--ink)}
+.scroll{overflow-x:auto}
+/* gate */
+.gated{position:relative}
+.gated.locked .inner{filter:blur(6px);pointer-events:none;user-select:none;max-height:520px;overflow:hidden}
+.lock{display:none}
+.gated.locked .lock{display:flex;position:absolute;inset:40px 0 auto 0;justify-content:center;z-index:2}
+.lockbox{max-width:520px;background:var(--card);border:2px solid var(--ink);box-shadow:8px 8px 0 var(--ink);border-radius:14px;padding:22px 22px 18px;margin:0 12px}
+.lockbox h3{font-size:1.5rem}
+.lockbox p{margin:0 0 12px;color:var(--mute)}
+.lockrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.lockrow input{flex:1 1 160px;text-transform:uppercase}
+.err{color:var(--red);font-size:.85rem;min-height:1.2em;margin-top:6px}
+.embed{margin-top:12px}
+.embed iframe{width:100%;height:150px;border:1px solid var(--rule);border-radius:10px;background:#fff}
+.share{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{font-size:.82rem;color:var(--mute);max-width:72ch}
+.foot{border-top:2px dotted var(--rule);padding-top:22px;margin-top:40px;display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:flex-start}
+.foot a{color:var(--orange-ink);font-weight:600}
+.loading{color:var(--mute);font-style:italic}
+@media (max-width:560px){.bar{grid-template-columns:minmax(90px,42%) 1fr auto}.move{grid-template-columns:auto 1fr}.move .e{grid-column:2;text-align:left}}
+</style>
+</head>
+<body>
+<main>
+<header class="top">
+  <a class="brand" href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool" rel="noopener">Le Portée</a>
+  <a class="cta" href="https://www.leportee.com/subscribe?utm_source=planner&amp;utm_medium=tool&amp;utm_campaign=header" rel="noopener">Subscribe free</a>
+</header>
+
+<p class="kicker">The hotel planner · <span id="kCountry">Germany</span></p>
+<h1>What should your hotel <mark>add next</mark>?</h1>
+<p class="sub">Built on <b id="nHotels">25,000</b> German Booking.com listings and what actually moves their review scores — controlled for price, class, size and location. Plan a new property or look up one you already run. Free, no login.</p>
+
+<div class="chips" id="countries" aria-label="Country"></div>
+
+<section>
+  <div class="modes" role="group" aria-label="What are you planning?">
+    <button class="mode" data-mode="new" aria-pressed="false"><b>Planning a new property</b><span>Where, what kind, how big, what budget — get the facility stack that pays.</span></button>
+    <button class="mode" data-mode="existing" aria-pressed="false"><b>Running an existing one</b><span>Find your hotel. See where it ranks, what competitors have and what to add.</span></button>
+  </div>
+</section>
+
+<!-- ============ mode: new property ============ -->
+<section id="formNew" class="hide">
+  <h2>Your new property</h2>
+  <div class="panel">
+    <div class="grid">
+      <label>Where<input id="town" list="towns" placeholder="Town or city, e.g. Freiburg" autocomplete="off"><small id="townHint">Pick the nearest town with hotels — competitors are counted within 10 km.</small></label>
+      <datalist id="towns"></datalist>
+      <label>Rooms<input id="nRooms" type="number" min="3" max="1000" value="40"></label>
+    </div>
+    <p class="kicker" style="margin:18px 0 6px">What kind of property</p>
+    <div class="archs" id="archs" role="group" aria-label="Property type"></div>
+    <div class="grid" style="margin-top:14px">
+      <label>Target rate (€/night)<input id="nAdr" type="number" min="20" max="2000"><small id="adrHint"></small></label>
+      <label>Expected occupancy (%)<input id="nOcc" type="number" min="20" max="100" value="70"></label>
+      <label>Facility budget (€)<input id="nBudget" type="number" min="0" step="5000" value="150000"><small>One-off spend on facilities and fit-out extras — not the building.</small></label>
+    </div>
+    <div class="go"><button class="cta" id="goNew">Build my stack</button><span class="hint" id="newErr"></span></div>
+  </div>
+</section>
+
+<!-- ============ mode: existing property ============ -->
+<section id="formExisting" class="hide">
+  <h2>Your property</h2>
+  <div class="panel">
+    <label>Find your hotel<input id="q" placeholder="Hotel name, e.g. Gasthof zur Post" autocomplete="off"><small>Germany only for now · properties with 20+ reviews.</small></label>
+    <ul class="results hide" id="hits" role="listbox"></ul>
+    <div id="picked" class="picked hide"></div>
+    <div class="grid" style="margin-top:16px">
+      <label>Rooms<input id="eRooms" type="number" min="3" max="1000" value="40"></label>
+      <label>Average rate (€/night)<input id="eAdr" type="number" min="20" max="2000"><small id="eAdrHint"></small></label>
+      <label>Occupancy (%)<input id="eOcc" type="number" min="20" max="100" value="70"></label>
+      <label>Budget (€)<input id="eBudget" type="number" min="0" step="5000" value="50000"></label>
+    </div>
+    <div class="go"><button class="cta" id="goExisting">Show what to add</button><span class="hint" id="exErr"></span></div>
+  </div>
+</section>
+
+<!-- ============ result ============ -->
+<section id="result" class="hide" aria-live="polite">
+  <h2 id="resTitle">Your plan</h2>
+  <h3 id="resHead"></h3>
+  <p class="sub" id="resSub" style="margin-bottom:18px"></p>
+  <div class="stats" id="stats"></div>
+  <div class="ruler" id="ruler"></div>
+
+  <h2>Your top 3 moves</h2>
+  <div class="moves" id="moves"></div>
+  <p class="note" id="movesNote" style="margin-top:10px"></p>
+
+  <div class="share" style="margin:22px 0 34px">
+    <button class="cta ghost" id="copyLink">Copy link to this result</button>
+    <button class="cta ghost" id="shareBtn">Share</button>
+    <span class="hint" id="shareMsg"></span>
+  </div>
+
+  <div class="gated locked" id="gated">
+    <div class="lock">
+      <div class="lockbox">
+        <h3>Unlock the <mark>full plan</mark></h3>
+        <p>Every addition with its cost for your room count, rate uplift and payback, what your competitors within 10 km have, the free wins you are not claiming<span id="lockExtra"></span>. Free for Le Portée subscribers — the code is in your welcome email.</p>
+        <div class="lockrow">
+          <button class="cta" id="openSub">Subscribe free</button>
+          <input id="code" placeholder="Subscriber code" aria-label="Subscriber code" autocomplete="off">
+          <button class="cta ghost" id="unlock">Unlock</button>
+        </div>
+        <div class="err" id="codeErr"></div>
+        <div class="embed hide" id="embed"></div>
+      </div>
+    </div>
+    <div class="inner" id="full"></div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="note">
+    <b>How this works.</b> Effects are multivariate estimates from Booking.com listings scraped in October 2026 — each facility's association with the review score holding price, star class, size, review volume, postcode region, local market density and the number of facilities listed constant, with errors clustered by city. They are observational, not guarantees; only effects that survive false-discovery correction and a city-cluster bootstrap are used. Costs are indicative German mid-market figures. The full method is in <a href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool&amp;utm_campaign=method" rel="noopener">Le Portée</a>.
+    <br><br>Hotel data comes from public Booking.com listings: name, town, review scores and the facilities a property lists. No prices or contact details are shown. Want a property taken out? Reply to any Le Portée email.
+  </div>
+  <div class="note"><a href="https://sources.leportee.com/?utm_source=planner" rel="noopener">Source Library</a><br><a href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool" rel="noopener">Le Portée newsletter</a><br><span id="built"></span></div>
+</footer>
+</main>
+<script src="app.js" defer></script>
+</body>
+</html>
