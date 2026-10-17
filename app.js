@@ -1,4 +1,4 @@
-/* Le Portée Hotel Planner — static, no dependencies, no trackers.
+/* Le Portée Hotel Planner: static, no dependencies, no trackers.
  *
  * The arithmetic mirrors the research dashboard's /planner page (mishka-research):
  *   effect here   = archetype effect, shifted along its quantile curve to the property's
@@ -136,8 +136,8 @@ function plan({ archName, rooms, adr, occ, budget, have, score, localPrev, isNew
   });
   const good = (r) => (r.grade === "A" || r.grade === "B") && r.eff > 0.01;
 
-  // a new property gets the archetype's standard kit — what half the archetype already
-  // lists — before anything else; it is what the local median already assumes
+  // a new property gets the archetype's standard kit (what half the archetype already
+  // lists) before anything else; it is what the local median already assumes
   const kit = isNew ? rows.filter((r) => good(r) && r.prev >= 50 && r.f.kind !== "structural") : [];
   const kitCapex = kit.reduce((s, r) => s + (BUY.has(r.f.kind) ? r.capex : 0), 0);
   const kitSet = new Set(kit.map((r) => r.i));
@@ -153,7 +153,7 @@ function plan({ archName, rooms, adr, occ, budget, have, score, localPrev, isNew
   const k = picks.length;
   const raw = picks.reduce((s, r) => s + r.eff, 0);
   // saturating rather than a hard cap: a small plan keeps (almost) all of its effect, a big
-  // one approaches — never passes — the archetype's median→top-decile facility gap
+  // one approaches (never passes) the archetype's median→top-decile facility gap
   const ceil = M.ceiling[archName];
   const sat = (x, c) => (x <= 0 ? 0 : c * (1 - Math.exp(-x / c)));
   const x = M.meta.k_score * (raw + k * M.meta.nfac);
@@ -203,11 +203,11 @@ function bars(items, max, fmt, cls = "") {
 function topMoves(p) {
   const best = [...p.picks].sort((a, b) => b.eff - a.eff).slice(0, 3);
   if (!best.length) {
-    $("#moves").innerHTML = `<p class="note">Nothing in the budget clears the evidence bar — raise the budget, or the property already lists what moves the score for its type.</p>`;
+    $("#moves").innerHTML = `<p class="note">Nothing in the budget clears the evidence bar. Raise the budget, or the property already lists what moves the score for its type.</p>`;
     $("#movesNote").textContent = "";
     return;
   }
-  $("#moves").innerHTML = best.map((r) => `<div class="move"><div><b>${esc(r.f.name)}</b><span>${r.cost3 === 0 ? "No capex — " + (r.f.kind === "policy" ? "a policy change" : "costs nothing") : eur(r.capex) + " for your rooms"}${r.opex ? ` + ${eur(r.opex)}/yr` : ""} · ${Math.round(r.local)}% of local competitors have it</span></div><div class="e">${sgn(r.eff)}</div></div>`).join("");
+  $("#moves").innerHTML = best.map((r) => `<div class="move"><div><b>${esc(r.f.name)}</b><span>${r.cost3 === 0 ? "No capex: " + (r.f.kind === "policy" ? "a policy change" : "costs nothing") : eur(r.capex) + " for your rooms"}${r.opex ? ` + ${eur(r.opex)}/yr` : ""} · ${Math.round(r.local)}% of local competitors have it</span></div><div class="e">${sgn(r.eff)}</div></div>`).join("");
   $("#movesNote").textContent = "Score points each one adds for this property type at this score level. The full plan below has the rest, costed.";
 }
 
@@ -216,18 +216,18 @@ function fullPlan(p, ctx) {
   let h = `<h2>The full plan · ${p.k} additions</h2>`;
   if (ctx.isNew) {
     h += p.budgetShort
-      ? `<p class="note down">The standard kit alone costs ${eur(p.kitCapex)} for ${ctx.rooms} rooms — more than the budget. Everything below assumes the kit first.</p>`
+      ? `<p class="note down">The standard kit alone costs ${eur(p.kitCapex)} for ${ctx.rooms} rooms, more than the budget. Everything below assumes the kit first.</p>`
       : `<p class="note">${eur(p.kitCapex)} of the budget goes on the standard kit; ${eur(Math.max(ctx.budget - p.kitCapex, 0))} is left for differentiators.</p>`;
   }
   h += p.picks.length ? `<div class="scroll"><table><thead><tr><th>Add</th><th>Kind</th><th class="num">Score</th><th class="num">Capex</th><th class="num">Opex/yr</th><th class="num" title="What the market charges for it, holding class, size and city constant">Rate premium</th><th class="num">Local share</th></tr></thead><tbody>${p.picks.map(tr).join("")}</tbody><tfoot><tr><td><b>Together</b></td><td></td><td class="num"><b>${sgn(p.gain)}</b></td><td class="num"><b>${eur(p.capex)}</b></td><td class="num"><b>${eur(p.opex)}</b></td><td class="num"><b>${sgn(p.ratePct, 1)}%</b></td><td></td></tr></tfoot></table></div>` : `<p class="note">No additions fit the budget.</p>`;
-  h += `<div class="stats" style="margin-top:16px">${stat(eur(p.revenue), "Rate uplift per year", `${sgn(p.ratePct, 1)}% on ${ctx.rooms} rooms at ${ctx.occ}%`)}${stat(p.payback == null ? "–" : p.payback.toFixed(1) + " yrs", "Payback", p.payback == null ? "the rate effect does not cover the running costs" : "if you can charge the market premium: capex ÷ (uplift − opex)")}${stat(sgn(p.gain), "Score gain", p.capped ? "near the most a facility list can add for this type — beyond this it is service, not stuff" : "after overlap and out-of-sample shrinkage")}</div>`;
+  h += `<div class="stats" style="margin-top:16px">${stat(eur(p.revenue), "Rate uplift per year", `${sgn(p.ratePct, 1)}% on ${ctx.rooms} rooms at ${ctx.occ}%`)}${stat(p.payback == null ? "–" : p.payback.toFixed(1) + " yrs", "Payback", p.payback == null ? "the rate effect does not cover the running costs" : "if you can charge the market premium: capex ÷ (uplift − opex)")}${stat(sgn(p.gain), "Score gain", p.capped ? "near the most a facility list can add for this type; beyond this it is service, not stuff" : "after overlap and out-of-sample shrinkage")}</div>`;
 
   if (ctx.isNew && p.kit.length) {
     h += `<h2>The standard kit for a ${esc(ctx.archName.toLowerCase())}</h2><p class="note">Half or more of the type already lists these, and each lifts the score. Missing one is what gets punished.</p><div class="scroll"><table><thead><tr><th>Facility</th><th>Kind</th><th class="num">Score</th><th class="num">Capex</th><th class="num">Of the type</th><th class="num">Of its top quarter</th></tr></thead><tbody>${p.kit.sort((a, b) => b.eff - a.eff).map((r) => `<tr><td>${esc(r.f.name)}</td><td><span class="tag m">${KIND_LABEL[r.f.kind] || r.f.kind}</span></td><td class="num">${sgn(r.eff, 3)}</td><td class="num">${BUY.has(r.f.kind) && r.capex ? eur(r.capex) : "–"}</td><td class="num">${Math.round(r.prev)}%</td><td class="num">${Math.round(r.top)}%</td></tr>`).join("")}</tbody></table></div>`;
   }
 
   if (p.free.length) {
-    h += `<h2>Free wins</h2><p class="note">Zero capex. Policies are a decision; “tick the box” items you may already have — Booking only counts what is listed on the extranet.</p>${bars(p.free.slice(0, 10).map((r) => ({ n: r.f.name + (r.f.kind === "listing" ? " (tick)" : ""), v: r.eff, cls: "g" })), p.free[0].eff, (v) => sgn(v))}`;
+    h += `<h2>Free wins</h2><p class="note">Zero capex. Policies are a decision; “tick the box” items you may already have, because Booking only counts what is listed on the extranet.</p>${bars(p.free.slice(0, 10).map((r) => ({ n: r.f.name + (r.f.kind === "listing" ? " (tick)" : ""), v: r.eff, cls: "g" })), p.free[0].eff, (v) => sgn(v))}`;
   }
 
   if (p.gap.length) {
@@ -261,13 +261,13 @@ function fullPlan(p, ctx) {
   }
 
   if (p.fits.length) {
-    h += `<h2>Only if it fits where you are</h2><p class="note">These lift scores where they belong — and nowhere else, so they are never in the plan above.</p><ul class="note" style="padding-left:18px">${p.fits.map((r) => `<li><b>${esc(r.f.name)}</b> ${sgn(r.eff)} — ${esc(r.f.note || "")}</li>`).join("")}</ul>`;
+    h += `<h2>Only if it fits where you are</h2><p class="note">These lift scores where they belong and nowhere else, so they are never in the plan above.</p><ul class="note" style="padding-left:18px">${p.fits.map((r) => `<li><b>${esc(r.f.name)}</b> ${sgn(r.eff)}: ${esc(r.f.note || "")}</li>`).join("")}</ul>`;
   }
 
   if (p.skip.length) {
-    h += `<h2>Money you would spend for nothing</h2><p class="note">Capex plus three years of running costs for your size — and no reliable effect on the score for this type, or a negative one. They may be right for other reasons; the score is not one of them.</p>${bars(p.skip.map((r) => ({ n: r.f.name, v: r.cost3, cls: r.role === "drag" ? "r" : "a" })), p.skip[0].cost3, (v) => eur(v))}`;
+    h += `<h2>Money you would spend for nothing</h2><p class="note">Capex plus three years of running costs for your size, with no reliable effect on the score for this type, or a negative one. They may be right for other reasons; the score is not one of them.</p>${bars(p.skip.map((r) => ({ n: r.f.name, v: r.cost3, cls: r.role === "drag" ? "r" : "a" })), p.skip[0].cost3, (v) => eur(v))}`;
   }
-  h += `<p class="note" style="margin-top:22px">Summed effects overlap, so the total is shrunk to what held up in towns the model never saw (score ×${M.meta.k_score}, rate ×${M.meta.k_price}) and saturates towards the gap between this type's median and top-decile facility set (${sgn(M.ceiling[ctx.archName].score)}) — no property in the data gets more out of its list than that. Running costs are counted for three years when ranking.</p>`;
+  h += `<p class="note" style="margin-top:22px">Summed effects overlap, so the total is shrunk to what held up in towns the model never saw (score ×${M.meta.k_score}, rate ×${M.meta.k_price}) and saturates towards the gap between this type's median and top-decile facility set (${sgn(M.ceiling[ctx.archName].score)}). No property in the data gets more out of its list than that. Running costs are counted for three years when ranking.</p>`;
   $("#full").innerHTML = h;
 }
 
@@ -456,7 +456,7 @@ async function init() {
   for (const c of COUNTRIES) {
     const b = el(c.live ? "button" : "a", c.live ? { class: "chip", "aria-pressed": "true" }
       : { class: "chip soon", href: `${SUB_URL}?utm_source=planner&utm_medium=tool&utm_campaign=waitlist-${c.cc}`, target: "_blank", rel: "noopener", title: `Subscribe to hear when ${c.name} goes live` },
-      c.live ? `${c.name} · live` : `${c.name} · coming — get notified`);
+      c.live ? `${c.name} · live` : `${c.name} · coming, get notified`);
     cc.appendChild(b);
   }
   document.querySelectorAll(".mode").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
@@ -480,7 +480,7 @@ async function init() {
   try {
     await load();
   } catch (e) {
-    $(".sub").insertAdjacentHTML("afterend", `<p class="err">The data did not load — refresh the page.</p>`);
+    $(".sub").insertAdjacentHTML("afterend", `<p class="err">The data did not load. Refresh the page.</p>`);
     return;
   }
   $("#nHotels").textContent = D.h.length.toLocaleString("en-GB");

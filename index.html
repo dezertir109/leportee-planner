@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Le Portée Hotel Planner</title>
-<meta name="description" content="What should your hotel add next? A free planner built on 25,000 German Booking.com listings and what actually moves their review scores — for a new property or one you already run.">
-<meta property="og:title" content="What should your hotel add next? — Le Portée Hotel Planner">
+<meta name="description" content="What should your hotel add next? A free planner built on 25,000 German Booking.com listings and what actually moves their review scores, for a new property or one you already run.">
+<meta property="og:title" content="What should your hotel add next? | Le Portée Hotel Planner">
 <meta property="og:description" content="Built on 25,000 German Booking.com listings: where a property ranks, what its competitors have, and which additions actually move the score.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://planner.leportee.com/">
@@ -147,13 +147,13 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
 <p class="kicker">The hotel planner · <span id="kCountry">Germany</span></p>
 <h1>What should your hotel <mark>add next</mark>?</h1>
-<p class="sub">Built on <b id="nHotels">25,000</b> German Booking.com listings and what actually moves their review scores — controlled for price, class, size and location. Plan a new property or look up one you already run. Free, no login.</p>
+<p class="sub">Built on <b id="nHotels">25,000</b> German Booking.com listings and what actually moves their review scores, controlled for price, class, size and location. Plan a new property or look up one you already run. Free, no login.</p>
 
 <div class="chips" id="countries" aria-label="Country"></div>
 
 <section>
   <div class="modes" role="group" aria-label="What are you planning?">
-    <button class="mode" data-mode="new" aria-pressed="false"><b>Planning a new property</b><span>Where, what kind, how big, what budget — get the facility stack that pays.</span></button>
+    <button class="mode" data-mode="new" aria-pressed="false"><b>Planning a new property</b><span>Where, what kind, how big, what budget: get the facility stack that pays.</span></button>
     <button class="mode" data-mode="existing" aria-pressed="false"><b>Running an existing one</b><span>Find your hotel. See where it ranks, what competitors have and what to add.</span></button>
   </div>
 </section>
@@ -163,7 +163,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
   <h2>Your new property</h2>
   <div class="panel">
     <div class="grid">
-      <label>Where<input id="town" list="towns" placeholder="Town or city, e.g. Freiburg" autocomplete="off"><small id="townHint">Pick the nearest town with hotels — competitors are counted within 10 km.</small></label>
+      <label>Where<input id="town" list="towns" placeholder="Town or city, e.g. Freiburg" autocomplete="off"><small id="townHint">Pick the nearest town with hotels. Competitors are counted within 10 km.</small></label>
       <datalist id="towns"></datalist>
       <label>Rooms<input id="nRooms" type="number" min="3" max="1000" value="40"></label>
     </div>
@@ -172,7 +172,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
     <div class="grid" style="margin-top:14px">
       <label>Target rate (€/night)<input id="nAdr" type="number" min="20" max="2000"><small id="adrHint"></small></label>
       <label>Expected occupancy (%)<input id="nOcc" type="number" min="20" max="100" value="70"></label>
-      <label>Facility budget (€)<input id="nBudget" type="number" min="0" step="5000" value="150000"><small>One-off spend on facilities and fit-out extras — not the building.</small></label>
+      <label>Facility budget (€)<input id="nBudget" type="number" min="0" step="5000" value="150000"><small>One-off spend on facilities and fit-out extras, not the building.</small></label>
     </div>
     <div class="go"><button class="cta" id="goNew">Build my stack</button><span class="hint" id="newErr"></span></div>
   </div>
@@ -217,7 +217,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
     <div class="lock">
       <div class="lockbox">
         <h3>Unlock the <mark>full plan</mark></h3>
-        <p>Every addition with its cost for your room count, rate uplift and payback, what your competitors within 10 km have, the free wins you are not claiming<span id="lockExtra"></span>. Free for Le Portée subscribers — the code is in your welcome email.</p>
+        <p>Every addition with its cost for your room count, rate uplift and payback, what your competitors within 10 km have, the free wins you are not claiming<span id="lockExtra"></span>. Free for Le Portée subscribers: the code is in your welcome email.</p>
         <div class="lockrow">
           <button class="cta" id="openSub">Subscribe free</button>
           <input id="code" placeholder="Subscriber code" aria-label="Subscriber code" autocomplete="off">
@@ -233,7 +233,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
 <footer class="foot">
   <div class="note">
-    <b>How this works.</b> Effects are multivariate estimates from Booking.com listings scraped in October 2026 — each facility's association with the review score holding price, star class, size, review volume, postcode region, local market density and the number of facilities listed constant, with errors clustered by city. They are observational, not guarantees; only effects that survive false-discovery correction and a city-cluster bootstrap are used. Costs are indicative German mid-market figures. The full method is in <a href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool&amp;utm_campaign=method" rel="noopener">Le Portée</a>.
+    <b>How this works.</b> Effects are multivariate estimates from Booking.com listings scraped in October 2026: each facility's association with the review score holding price, star class, size, review volume, postcode region, local market density and the number of facilities listed constant, with errors clustered by city. They are observational, not guarantees; only effects that survive false-discovery correction and a city-cluster bootstrap are used. Costs are indicative German mid-market figures. The full method is in <a href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool&amp;utm_campaign=method" rel="noopener">Le Portée</a>.
     <br><br>Hotel data comes from public Booking.com listings: name, town, review scores and the facilities a property lists. No prices or contact details are shown. Want a property taken out? Reply to any Le Portée email.
   </div>
   <div class="note"><a href="https://sources.leportee.com/?utm_source=planner" rel="noopener">Source Library</a><br><a href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool" rel="noopener">Le Portée newsletter</a><br><span id="built"></span></div>
