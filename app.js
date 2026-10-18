@@ -1,4 +1,4 @@
-/* Le Portée Hotel Planner: static, no dependencies, no trackers.
+/* Le Portée Hotel Upgrade Finder: static, no dependencies, no trackers.
  *
  * The arithmetic mirrors the research dashboard's /planner page (mishka-research):
  *   effect here   = archetype effect, shifted along its quantile curve to the property's
@@ -179,6 +179,46 @@ function plan({ archName, rooms, adr, occ, budget, have, score, localPrev, isNew
     budgetShort: isNew && budget < kitCapex };
 }
 
+// The same plan at a ladder of budgets: where spending stops buying score. This is the
+// answer to "if I max the budget, why does the score barely move": facilities have a ceiling.
+const BUDGETS = [0, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+
+function budgetCurve(args) {
+  return BUDGETS.map((b) => ({ b, gain: plan({ ...args, budget: b }).gain }));
+}
+
+function renderCurve(points, budget, archName) {
+  const ceil = M.ceiling[archName].score;
+  const W = 640, H = 210, L = 46, R = 14, T = 16, B = 34;
+  const n = points.length;
+  const x = (j) => L + ((W - L - R) * j) / (n - 1);
+  const ymax = Math.max(ceil * 1.12, 0.05);
+  const y = (v) => T + (H - T - B) * (1 - v / ymax);
+  const label = (b) => (b === 0 ? "€0" : b >= 1e6 ? `€${b / 1e6}M` : `€${b / 1000}k`);
+  const path = points.map((p, j) => `${j ? "L" : "M"}${x(j).toFixed(1)},${y(p.gain).toFixed(1)}`).join(" ");
+  const area = `${path} L${x(n - 1)},${y(0)} L${x(0)},${y(0)} Z`;
+  // where the user's budget sits on the ladder
+  let jb = 0;
+  for (let j = 0; j < n; j++) if (budget >= points[j].b) jb = j;
+  const here = points[jb].gain;
+  const best = points[n - 1].gain;
+  const flat = points.find((p) => p.gain >= 0.8 * best) || points[n - 1];
+  let g = "";
+  for (let v = 0; v <= ymax + 1e-9; v += ymax > 0.4 ? 0.2 : 0.1) {
+    g += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">+${v.toFixed(1)}</text>`;
+  }
+  points.forEach((p, j) => { g += `<text x="${x(j)}" y="${H - 12}" text-anchor="middle">${label(p.b)}</text>`; });
+  $("#curve").innerHTML = `<div class="ttl">What more budget buys</div>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Score gain by budget">
+      ${g}
+      <line class="ceil" x1="${L}" x2="${W - R}" y1="${y(ceil)}" y2="${y(ceil)}"/>
+      <text x="${W - R}" y="${y(ceil) - 6}" text-anchor="end" style="fill:var(--green)">facility ceiling for this type +${ceil.toFixed(2)}</text>
+      <path class="ar" d="${area}"/><path class="ln" d="${path}"/>
+      <circle class="dot" cx="${x(jb)}" cy="${y(here)}" r="6"/>
+    </svg>
+    <p class="cap">Score gain from the best plan at each budget. Most of it arrives by about <b>${label(flat.b)}</b>; beyond that the line flattens towards the ceiling, the most any facility list adds for a ${esc(archName.toLowerCase())}. The rest of a review score is service, cleanliness and upkeep, which no facility buys.</p>`;
+}
+
 // ---------------------------------------------------------------------------------------
 // rendering
 // ---------------------------------------------------------------------------------------
@@ -300,6 +340,7 @@ function show(p, ctx) {
     ruler([{ s: locMed, label: "local median", cls: "loc" }, { s: p.newScore, label: "your plan", cls: "new" }]);
     $("#lockExtra").textContent = ", the standard kit for the type";
   }
+  renderCurve(budgetCurve(ctx.args), ctx.budget, ctx.archName);
   topMoves(p);
   fullPlan(p, ctx);
   applyLock();
@@ -322,8 +363,8 @@ function runNew() {
   const score = median(peers.list.map((h) => h.rating)) ?? M.dist[arch].pct[50];
   const ctx = { isNew: true, town, archName: arch, rooms: num("#nRooms", 40), adr: num("#nAdr", M.dist[arch].adr),
     occ: num("#nOcc", 70), budget: num("#nBudget", 150000), score, peers };
-  const p = plan({ ...ctx, have: new Set(), localPrev: prevalence(peers.list) });
-  show(p, ctx);
+  ctx.args = { ...ctx, have: new Set(), localPrev: prevalence(peers.list) };
+  show(plan(ctx.args), ctx);
 }
 
 function runExisting() {
@@ -333,8 +374,8 @@ function runExisting() {
   const peers = peersOf(h.lat, h.lng, h.arch, h.i);
   const ctx = { isNew: false, hotel: h, archName: h.arch, rooms: num("#eRooms", 40), adr: num("#eAdr", M.dist[h.arch].adr),
     occ: num("#eOcc", 70), budget: num("#eBudget", 50000), score: h.rating, peers };
-  const p = plan({ ...ctx, have: facSet(h), localPrev: prevalence(peers.list) });
-  show(p, ctx);
+  ctx.args = { ...ctx, have: facSet(h), localPrev: prevalence(peers.list) };
+  show(plan(ctx.args), ctx);
 }
 
 function pick(i) {
@@ -372,8 +413,12 @@ function setMode(m) {
   document.querySelectorAll(".mode").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
   $("#formNew").classList.toggle("hide", m !== "new");
   $("#formExisting").classList.toggle("hide", m !== "existing");
+  $("#formCheck").classList.toggle("hide", m !== "check");
+  $("#formBig").classList.toggle("hide", m !== "big");
   $("#result").classList.add("hide");
-  (m === "new" ? $("#town") : $("#q")).focus({ preventScroll: true });
+  if (m === "check") { renderBrowse(); $("#cFac").focus({ preventScroll: true }); }
+  else if (m === "big") renderBig();
+  else (m === "new" ? $("#town") : $("#q")).focus({ preventScroll: true });
 }
 
 function setArch(name) {
@@ -385,8 +430,194 @@ function setArch(name) {
 }
 
 // ---------------------------------------------------------------------------------------
+// check one facility
+// ---------------------------------------------------------------------------------------
+
+let subByFac = null;   // facility index → [[sub-score, coef]] from model E
+function subsFor(i) {
+  if (!subByFac) {
+    subByFac = new Map();
+    for (const [t, list] of Object.entries(M.sub_effects || {})) {
+      for (const [fi, c] of list) {
+        if (!subByFac.has(fi)) subByFac.set(fi, []);
+        subByFac.get(fi).push([t === "Free WiFi" ? "WiFi" : t, c]);
+      }
+    }
+  }
+  return [...(subByFac.get(i) || [])].sort((a, b) => b[1] - a[1]);
+}
+
+const facIndex = (name) => {
+  const n = name.trim().toLowerCase();
+  return M.facilities.findIndex((f) => f.name.toLowerCase() === n);
+};
+
+function verdictFor(f, eff, grade, prev, rate, cost3) {
+  if (f.kind === "structural") return ["no", "Not something you can buy", "It describes the building or the location. Shown for reference."];
+  if (f.kind === "context") return ["no", "Only where it fits", f.note || "It pays only in the right location."];
+  const solid = grade === "A" || grade === "B";
+  if (solid && eff < -0.01) return ["bad", "Guests score it worse", "Properties that list it score lower than comparable ones without it."];
+  if (!solid || Math.abs(eff) <= 0.01) {
+    if (rate > 0) return ["no", "No score effect, but it earns rate", "Guests do not score it higher; the market does charge for it."];
+    return ["no", "Skip it for the score", "No reliable effect on the review score for this type."];
+  }
+  if (prev >= 50) return ["hy", "A basic for this type", "Most of the type lists it, and missing it costs you."];
+  if (eff < 0.05) return ["no", "A small lift", "Real, but small: under a twentieth of a point. Buy it for its own reasons, not for the score."];
+  return ["go", "Worth it: guests notice it", cost3 === 0 ? "And it costs nothing to switch on." : "A differentiator: fewer than half of the type have it."];
+}
+
+const GRADE_TXT = { A: "strong: significant and stable across 200 re-draws of towns",
+  B: "likely: significant, stable in 9 of 10 re-draws", C: "weak: could be noise" };
+
+function renderCheck() {
+  const i = facIndex($("#cFac").value);
+  if (i < 0) { $("#chErr").textContent = "Pick a facility from the list."; return; }
+  $("#chErr").textContent = "";
+  const a = $("#cArch").value, E = M.effects[a], f = M.facilities[i];
+  const rooms = num("#cRooms", 40), adr = num("#cAdr", M.dist[a].adr), occ = num("#cOcc", 70);
+  const score = num("#cScore", M.dist[a].pct[50]);
+  const t = tauIdx(pctOf(a, score));
+  const base = E.eff[i] ?? 0;
+  const eff = base + (E.curve[i][t] - E.curve[i][2]);
+  const rate = E.rate[i] || 0, grade = E.grade[i], prev = E.prev[i] || 0, top = E.top[i] || 0;
+  const capex = f.capex_room * rooms + f.capex_fixed, opex = f.opex_room * rooms + f.opex_fixed;
+  const rev = rooms * 365 * (occ / 100) * adr * (M.meta.k_price * rate / 100);
+  const payback = rev - opex > 0 ? capex / (rev - opex) : null;
+  const [vc, vt, vd] = verdictFor(f, eff, grade, prev, rate, capex + 3 * opex);
+  const lv = ["weakest 10%", "lower quarter", "median", "upper quarter", "strongest 10%"]
+    .map((n, j) => ({ n, v: base + (E.curve[i][j] - E.curve[i][2]) }));
+  const across = M.archetypes.map((x) => ({ n: x.name + (M.effects[x.name].src[i] === "archetype" ? "" : " *"),
+    v: M.effects[x.name].eff[i] ?? 0, cls: x.name === a ? "" : "b" }));
+  const subs = subsFor(i);
+  const maxL = Math.max(...lv.map((x) => Math.abs(x.v)), 0.02);
+  const maxA = Math.max(...across.map((x) => Math.abs(x.v)), 0.02);
+  $("#checkOut").innerHTML = `<div class="fcard">
+    <span class="verdict ${vc}">${esc(vt)}</span>
+    <h3>${esc(f.name)} <mark>${esc(a.toLowerCase())}</mark></h3>
+    <p class="note">${esc(vd)}</p>
+    <div class="stats" style="margin-top:12px">
+      ${stat(sgn(eff), "on the review score", `at a current score of ${score.toFixed(1)}`, eff >= 0 ? "up" : "down")}
+      ${stat(rate ? sgn(rate, 1) + "%" : "–", "rate premium", rate ? "what the market charges for it" : "no reliable premium")}
+      ${stat(Math.round(prev) + "%", "of the type list it", `${Math.round(top)}% of its top-scoring quarter`)}
+      ${stat(grade || "–", "evidence", GRADE_TXT[grade] || "not measured")}
+    </div>
+    <div class="two">
+      <div><h2>By current score</h2>${bars(lv.map((x) => ({ ...x, cls: x.v >= 0 ? "g" : "r" })), maxL, (v) => sgn(v))}<p class="note" style="margin-top:6px">Basics fade: they matter most to the weakest properties.</p></div>
+      <div><h2>By property type</h2>${bars(across, maxA, (v) => sgn(v))}<p class="note" style="margin-top:6px">* no type-specific effect found; the all-types number is shown.</p></div>
+    </div>
+    ${subs.length ? `<h2 style="margin-top:22px">Which sub-scores it moves</h2>${bars(subs.map(([s, c]) => ({ n: s, v: c, cls: "b" })), subs[0][1], (v) => sgn(v))}<p class="note" style="margin-top:6px">Only sub-scores where the effect is significant. A facility that moves Cleanliness or Staff is changing how the whole stay feels.</p>` : ""}
+    <div class="money ${unlocked() ? "" : "locked"}" style="margin-top:22px">
+      <div class="mb"><h2>For your property</h2><div class="stats">
+        ${stat(capex ? eur(capex) : "€0", "one-off", f.note ? esc(f.note) : `for ${rooms} rooms`)}
+        ${stat(opex ? eur(opex) + "/yr" : "€0", "running costs")}
+        ${stat(rate ? eur(rev) : "–", "rate uplift per year", rate ? `if you charge the premium, at ${occ}% occupancy` : "no premium to charge")}
+        ${stat(payback == null ? "–" : payback.toFixed(1) + " yrs", "payback", payback == null ? "the premium does not cover it" : "capex ÷ (uplift − running costs)")}
+      </div></div>
+      <div class="ml"><div class="lockbox"><p><b>Costs and payback for your rooms</b> are free for Le Portée subscribers. The code is in your welcome email.</p><div class="lockrow"><a class="cta" target="_blank" rel="noopener" href="${SUB_URL}?utm_source=planner&amp;utm_medium=tool&amp;utm_campaign=check">Subscribe free</a><input class="mcode" placeholder="Subscriber code" autocomplete="off"><button class="cta ghost mgo">Unlock</button></div><div class="err merr"></div></div></div>
+    </div>
+  </div>`;
+  wireMiniLock($("#checkOut"));
+  setHash({ m: "c", f: f.name, a });
+}
+
+function renderBrowse() {
+  const a = $("#cArch").value, E = M.effects[a];
+  const q = $("#bQ").value.trim().toLowerCase(), g = $("#bGroup").value, s = $("#bSort").value;
+  const rows = M.facilities.map((f, i) => ({ f, i, eff: E.eff[i] ?? 0, rate: E.rate[i] || 0, prev: E.prev[i] || 0, grade: E.grade[i] }))
+    .filter((r) => (!q || r.f.name.toLowerCase().includes(q)) && (!g || r.f.group === g));
+  const key = { eff: (r) => -r.eff, rate: (r) => -r.rate, prev: (r) => -r.prev };
+  rows.sort((x, y) => (s === "name" ? x.f.name.localeCompare(y.f.name) : key[s](x) - key[s](y)));
+  const gl = { A: "strong", B: "likely", C: "weak" };
+  const cls = (r) => (r.grade !== "C" && r.eff > 0.01 ? "up" : r.grade !== "C" && r.eff < -0.01 ? "down" : "");
+  const tag = (r) => (r.f.kind === "context" ? ' <span class="tag m">only where it fits</span>'
+    : r.f.kind === "structural" ? ' <span class="tag m">not for sale</span>' : "");
+  $("#bRows").innerHTML = rows.map((r) => `<tr data-f="${esc(r.f.name)}"><td>${esc(r.f.name)}${tag(r)}</td><td>${esc(r.f.group || "")}</td><td class="num ${cls(r)}">${sgn(r.eff, 3)}</td><td class="num">${r.rate ? sgn(r.rate, 1) + "%" : "–"}</td><td class="num">${Math.round(r.prev)}%</td><td>${gl[r.grade] || "–"}</td></tr>`).join("");
+  $("#bRows").querySelectorAll("tr").forEach((tr) => tr.addEventListener("click", () => {
+    $("#cFac").value = tr.dataset.f;
+    renderCheck();
+    $("#checkOut").scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
+}
+
+function checkDefaults() {
+  const a = $("#cArch").value;
+  $("#cAdr").value = M.dist[a].adr;
+  $("#cScore").value = M.dist[a].pct[50].toFixed(1);
+}
+
+// ---------------------------------------------------------------------------------------
+// the big decisions
+// ---------------------------------------------------------------------------------------
+
+function offerVerdict(o) {
+  if (o.rate_q < 0.05 && o.rate > 0 && o.score_q < 0.05 && o.score > 0) return ["pays twice", "g"];
+  if (o.rate_q < 0.05 && o.rate > 0) return ["earns rate", "b"];
+  if (o.score_q < 0.05 && o.score > 0) return ["earns score", "b"];
+  if (o.rate_q < 0.05 || o.score_q < 0.05) return ["costs you", ""];
+  return ["no measurable return", "m"];
+}
+
+function cell(v, q, fmt) {
+  if (v == null) return `<td class="c">–</td>`;
+  const sig = q < 0.05;
+  const bg = !sig ? "transparent" : v > 0 ? "color-mix(in srgb,var(--green) 22%,var(--card))" : "color-mix(in srgb,var(--red) 18%,var(--card))";
+  return `<td class="c" style="background:${bg};${sig ? "" : "color:var(--mute)"}">${fmt(v)}</td>`;
+}
+
+function renderBig() {
+  const a = $("#gArch").value;
+  const offers = (M.offerings[a] || []).filter((o) => o.rate_q != null).sort((x, y) => y.rate - x.rate);
+  const names = (M.offerings.All || []).map((o) => o.offering);
+  const at = (arch, name) => (M.offerings[arch] || []).find((o) => o.offering === name) || {};
+  const maxR = Math.max(...offers.map((o) => Math.abs(o.rate)), 1);
+  let h = `<h2 style="margin-top:22px">For a ${esc(a.toLowerCase())}</h2>
+    <p class="note">Rate effect inside this type, holding class, size, location and how much is listed constant. Colour = what it does to rate and score together.</p>
+    ${bars(offers.map((o) => { const [v, c] = offerVerdict(o); return { n: `${o.offering} · ${v}`, v: o.rate, cls: c === "g" ? "g" : c === "b" ? "b" : c === "" ? "r" : "a" }; }), maxR, (v) => sgn(v, 1) + "%")}
+    <div class="scroll" style="margin-top:14px"><table><thead><tr><th>Offering</th><th>Verdict</th><th class="num">Rate</th><th class="num">Score</th></tr></thead><tbody>
+    ${offers.map((o) => { const [v, c] = offerVerdict(o); return `<tr><td>${esc(o.offering)}</td><td><span class="tag ${c}">${v}</span></td><td class="num">${sgn(o.rate, 1)}%</td><td class="num">${sgn(o.score, 3)}</td></tr>`; }).join("")}
+    </tbody></table></div>`;
+  const archs = M.archetypes.map((x) => x.name);
+  const head = `<tr><th>Offering</th>${archs.map((x) => `<th class="c">${esc(x.split(" / ")[0])}</th>`).join("")}</tr>`;
+  h += `<h2 style="margin-top:30px">Every type at once: rate</h2>
+    <p class="note">% of nightly rate. Green or red = significant; grey = no measurable effect. The same offering pays in one type and costs in another.</p>
+    <div class="scroll"><table class="mx"><thead>${head}</thead><tbody>
+    ${names.map((n) => `<tr><td>${esc(n)}</td>${archs.map((x) => { const o = at(x, n); return cell(o.rate, o.rate_q, (v) => sgn(v, 1) + "%"); }).join("")}</tr>`).join("")}
+    </tbody></table></div>
+    <h2 style="margin-top:30px">Every type at once: review score</h2>
+    <div class="scroll"><table class="mx"><thead>${head}</thead><tbody>
+    ${names.map((n) => `<tr><td>${esc(n)}</td>${archs.map((x) => { const o = at(x, n); return cell(o.score, o.score_q, (v) => sgn(v, 2)); }).join("")}</tr>`).join("")}
+    </tbody></table></div>`;
+  const pairs = M.pairs || [];
+  if (pairs.length) {
+    h += `<h2 style="margin-top:30px">Pairs that change each other</h2>
+      <p class="note">Most offerings do not depend on each other. These are the combinations that do, estimated together so a third offering cannot fake the effect.</p>
+      <ul class="pairs note" style="padding-left:18px">${pairs.map((p) => `<li><b>${esc(p.a)} + ${esc(p.b)}</b>: ${p.target === "rating" ? sgn(p.effect, 2) + " on the score" : sgn(p.effect, 1) + "% on rate"} together beyond what each does alone${p.verdict ? ` (${esc(p.verdict)})` : ""}, ${Number(p.n_both).toLocaleString("en-GB")} properties have both.</li>`).join("")}</ul>`;
+  }
+  $("#bigOut").innerHTML = h;
+  setHash({ m: "b", a });
+}
+
+// ---------------------------------------------------------------------------------------
 // gate, share, state
 // ---------------------------------------------------------------------------------------
+
+function setHash(obj) {
+  history.replaceState(null, "", "#" + new URLSearchParams(obj).toString());
+}
+
+function wireMiniLock(root) {
+  root.querySelectorAll(".mgo").forEach((btn) => btn.addEventListener("click", async () => {
+    const box = btn.closest(".lockbox");
+    const code = box.querySelector(".mcode").value.trim().toLowerCase();
+    if (code && (await sha256(code)) === UNLOCK_HASH) {
+      store.set("lp_planner_unlocked", "1");
+      document.querySelectorAll(".money.locked").forEach((m) => m.classList.remove("locked"));
+      applyLock();
+    } else {
+      box.querySelector(".merr").textContent = "That code doesn't match. It's in the Le Portée welcome email.";
+    }
+  }));
+}
 
 async function sha256(s) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
@@ -437,6 +668,14 @@ function readHash() {
     if (M.dist[p.get("a")]) setArch(p.get("a"));
     for (const [k, s] of [["r", "#nRooms"], ["adr", "#nAdr"], ["occ", "#nOcc"], ["b", "#nBudget"]]) if (p.get(k)) $(s).value = p.get(k);
     runNew();
+  } else if (m === "c") {
+    if (M.dist[p.get("a")]) { $("#cArch").value = p.get("a"); checkDefaults(); }
+    setMode("check");
+    $("#cFac").value = p.get("f") || "";
+    if (facIndex($("#cFac").value) >= 0) renderCheck();
+  } else if (m === "b") {
+    if (M.dist[p.get("a")]) $("#gArch").value = p.get("a");
+    setMode("big");
   }
 }
 
@@ -470,7 +709,7 @@ async function init() {
     catch { $("#shareMsg").textContent = location.href; }
   });
   $("#shareBtn").addEventListener("click", async () => {
-    if (navigator.share) { try { await navigator.share({ title: "Le Portée Hotel Planner", text: shareText(), url: location.href }); } catch { /* dismissed */ } }
+    if (navigator.share) { try { await navigator.share({ title: "Le Portée Hotel Upgrade Finder", text: shareText(), url: location.href }); } catch { /* dismissed */ } }
     else { try { await navigator.clipboard.writeText(shareText() + " " + location.href); $("#shareMsg").textContent = "Copied to share."; } catch { /* no clipboard */ } }
   });
   let t;
@@ -488,6 +727,24 @@ async function init() {
   $("#towns").innerHTML = D.towns.map((t) => `<option value="${esc(t.name)}">${t.n} hotels</option>`).join("");
   $("#archs").innerHTML = M.archetypes.map((a) => `<button class="arch" data-a="${esc(a.name)}" aria-pressed="false"><b>${esc(a.name)}</b><span>${esc(a.blurb)}</span></button>`).join("");
   document.querySelectorAll(".arch").forEach((b) => b.addEventListener("click", () => setArch(b.dataset.a)));
+
+  // check one facility + big decisions
+  const archOpts = M.archetypes.map((a) => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join("");
+  $("#cArch").innerHTML = archOpts;
+  $("#gArch").innerHTML = archOpts;
+  $("#cArch").value = $("#gArch").value = "Midscale / standard";
+  checkDefaults();
+  $("#facs").innerHTML = M.facilities.map((f) => `<option value="${esc(f.name)}"></option>`).join("");
+  const groups = [...new Set(M.facilities.map((f) => f.group).filter(Boolean))].sort();
+  $("#bGroup").innerHTML = `<option value="">All groups</option>` + groups.map((g) => `<option>${esc(g)}</option>`).join("");
+  $("#goCheck").addEventListener("click", renderCheck);
+  $("#cFac").addEventListener("change", () => { if (facIndex($("#cFac").value) >= 0) renderCheck(); });
+  $("#cArch").addEventListener("change", () => { checkDefaults(); renderBrowse(); if (facIndex($("#cFac").value) >= 0) renderCheck(); });
+  $("#bQ").addEventListener("input", renderBrowse);
+  $("#bGroup").addEventListener("change", renderBrowse);
+  $("#bSort").addEventListener("change", renderBrowse);
+  $("#gArch").addEventListener("change", renderBig);
+
   if (location.hash.length > 1) readHash();
 }
 

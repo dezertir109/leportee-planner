@@ -1,6 +1,6 @@
-# Le Portée Hotel Planner
+# Le Portée Hotel Upgrade Finder
 
-planner.leportee.com — what a hotel should add next, from Booking.com listings and what
+planner.leportee.com: what a hotel should add next, from Booking.com listings and what
 actually moves their review scores. Static site (GitHub Pages), no dependencies, no trackers;
 the only third-party request is the Substack subscribe form, loaded when someone clicks
 "Subscribe".

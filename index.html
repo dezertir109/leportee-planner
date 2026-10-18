@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Le Portée Hotel Planner</title>
-<meta name="description" content="What should your hotel add next? A free planner built on 25,000 German Booking.com listings and what actually moves their review scores, for a new property or one you already run.">
-<meta property="og:title" content="What should your hotel add next? | Le Portée Hotel Planner">
-<meta property="og:description" content="Built on 25,000 German Booking.com listings: where a property ranks, what its competitors have, and which additions actually move the score.">
+<title>Hotel Upgrade Finder | Le Portée</title>
+<meta name="description" content="What should your hotel add next? A free upgrade finder built on 25,000 German Booking.com listings and what actually moves their review scores, for a new property or one you already run.">
+<meta property="og:title" content="What should your hotel add next? | Le Portée Hotel Upgrade Finder">
+<meta property="og:description" content="Built on 25,000 German Booking.com listings: where a property ranks, what its competitors have, which additions actually move the score, and whether one facility is worth buying.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://planner.leportee.com/">
 <meta property="og:image" content="https://planner.leportee.com/og.png">
@@ -136,7 +136,47 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .foot a{color:var(--orange-ink);font-weight:600}
 .loading{color:var(--mute);font-style:italic}
 @media (max-width:560px){.bar{grid-template-columns:minmax(90px,42%) 1fr auto}.move{grid-template-columns:auto 1fr}.move .e{grid-column:2;text-align:left}}
+.modes{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.mode b{font-size:1.15rem}
+.mode .ic{display:block;font-size:1.4rem;margin-bottom:6px}
+/* budget curve */
+.curve{background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:14px 16px 8px;margin:6px 0 26px}
+.curve svg{width:100%;height:auto;display:block}
+.curve .ttl{font:600 .78rem var(--head);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.curve .cap{font-size:.86rem;color:var(--mute);margin:6px 0 4px}
+.curve text{font:600 11px var(--head);fill:var(--mute)}
+.curve .ln{fill:none;stroke:var(--orange);stroke-width:3}
+.curve .ar{fill:color-mix(in srgb,var(--orange) 14%,transparent)}
+.curve .ceil{stroke:var(--green);stroke-width:2;stroke-dasharray:6 5}
+.curve .dot{fill:var(--orange);stroke:var(--card);stroke-width:2}
+.curve .grid{stroke:var(--rule);stroke-width:1}
+/* facility check */
+.fcard{background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:18px 18px 12px;margin-top:18px}
+.verdict{display:inline-block;font:600 .78rem var(--head);letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:999px;margin-bottom:10px}
+.verdict.go{background:color-mix(in srgb,var(--green) 18%,var(--card));color:var(--green)}
+.verdict.hy{background:var(--blush);color:var(--orange-ink)}
+.verdict.no{background:var(--rule);color:var(--ink)}
+.verdict.bad{background:color-mix(in srgb,var(--red) 16%,var(--card));color:var(--red)}
+.fcard h3{margin-bottom:6px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:14px}
+.money{position:relative}
+.money.locked .mb{filter:blur(5px);pointer-events:none;user-select:none}
+.money .ml{display:none}
+.money.locked .ml{display:flex;position:absolute;inset:0;align-items:center;justify-content:center}
+.ml .lockbox{box-shadow:5px 5px 0 var(--ink);padding:14px 16px}
+.ml .lockbox p{font-size:.88rem}
+.browse{margin-top:26px}
+.browse .ctl{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.browse .ctl input{flex:1 1 220px}
+.browse .ctl select{flex:0 1 220px}
+.browse tbody tr{cursor:pointer}
+.browse tbody tr:hover{background:var(--blush)}
+/* big decisions matrix */
+.mx td.c{text-align:center;font:600 .8rem var(--head);white-space:nowrap}
+.mx th.c{text-align:center}
+.pairs li{margin-bottom:6px}
 </style>
+
 </head>
 <body>
 <main>
@@ -145,16 +185,18 @@ td.num,th.num{text-align:right;white-space:nowrap}
   <a class="cta" href="https://www.leportee.com/subscribe?utm_source=planner&amp;utm_medium=tool&amp;utm_campaign=header" rel="noopener">Subscribe free</a>
 </header>
 
-<p class="kicker">The hotel planner · <span id="kCountry">Germany</span></p>
+<p class="kicker">Hotel Upgrade Finder · <span id="kCountry">Germany</span></p>
 <h1>What should your hotel <mark>add next</mark>?</h1>
-<p class="sub">Built on <b id="nHotels">25,000</b> German Booking.com listings and what actually moves their review scores, controlled for price, class, size and location. Plan a new property or look up one you already run. Free, no login.</p>
+<p class="sub">Built on <b id="nHotels">25,000</b> German Booking.com listings and what actually moves their review scores, controlled for price, class, size and location. Plan a property, look up your own, or check a single facility before you buy it. Free, no login.</p>
 
 <div class="chips" id="countries" aria-label="Country"></div>
 
 <section>
-  <div class="modes" role="group" aria-label="What are you planning?">
-    <button class="mode" data-mode="new" aria-pressed="false"><b>Planning a new property</b><span>Where, what kind, how big, what budget: get the facility stack that pays.</span></button>
-    <button class="mode" data-mode="existing" aria-pressed="false"><b>Running an existing one</b><span>Find your hotel. See where it ranks, what competitors have and what to add.</span></button>
+  <div class="modes" role="group" aria-label="What do you want to do?">
+    <button class="mode" data-mode="new" aria-pressed="false"><b>Plan a new property</b><span>Where, what kind, how big, what budget: the facility stack that pays.</span></button>
+    <button class="mode" data-mode="existing" aria-pressed="false"><b>Plan for my property</b><span>Find your hotel. Where it ranks, what competitors have, what to add.</span></button>
+    <button class="mode" data-mode="check" aria-pressed="false"><b>Check one facility</b><span>Thinking of buying one thing? See what it does for your type, and what it costs.</span></button>
+    <button class="mode" data-mode="big" aria-pressed="false"><b>Restaurant, spa &amp; co.</b><span>The big decisions by property type, and which ones cancel each other out.</span></button>
   </div>
 </section>
 
@@ -163,7 +205,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
   <h2>Your new property</h2>
   <div class="panel">
     <div class="grid">
-      <label>Where<input id="town" list="towns" placeholder="Town or city, e.g. Freiburg" autocomplete="off"><small id="townHint">Pick the nearest town with hotels. Competitors are counted within 10 km.</small></label>
+      <label>Where<input id="town" list="towns" placeholder="Town or city, e.g. Freiburg" autocomplete="off"><small>Pick the nearest town with hotels. Competitors are counted within 10 km.</small></label>
       <datalist id="towns"></datalist>
       <label>Rooms<input id="nRooms" type="number" min="3" max="1000" value="40"></label>
     </div>
@@ -172,7 +214,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
     <div class="grid" style="margin-top:14px">
       <label>Target rate (€/night)<input id="nAdr" type="number" min="20" max="2000"><small id="adrHint"></small></label>
       <label>Expected occupancy (%)<input id="nOcc" type="number" min="20" max="100" value="70"></label>
-      <label>Facility budget (€)<input id="nBudget" type="number" min="0" step="5000" value="150000"><small>One-off spend on facilities and fit-out extras, not the building.</small></label>
+      <label>Upgrade budget, one-off (€)<input id="nBudget" type="number" min="0" step="5000" value="150000"><small>What you can spend on facilities and fit-out, not the building. Running costs are counted separately.</small></label>
     </div>
     <div class="go"><button class="cta" id="goNew">Build my stack</button><span class="hint" id="newErr"></span></div>
   </div>
@@ -189,10 +231,43 @@ td.num,th.num{text-align:right;white-space:nowrap}
       <label>Rooms<input id="eRooms" type="number" min="3" max="1000" value="40"></label>
       <label>Average rate (€/night)<input id="eAdr" type="number" min="20" max="2000"><small id="eAdrHint"></small></label>
       <label>Occupancy (%)<input id="eOcc" type="number" min="20" max="100" value="70"></label>
-      <label>Budget (€)<input id="eBudget" type="number" min="0" step="5000" value="50000"></label>
+      <label>Upgrade budget, one-off (€)<input id="eBudget" type="number" min="0" step="5000" value="50000"><small>Facilities and fit-out. Running costs are counted separately.</small></label>
     </div>
     <div class="go"><button class="cta" id="goExisting">Show what to add</button><span class="hint" id="exErr"></span></div>
   </div>
+</section>
+
+<!-- ============ mode: check one facility ============ -->
+<section id="formCheck" class="hide">
+  <h2>Check one facility</h2>
+  <div class="panel">
+    <div class="grid">
+      <label>Facility<input id="cFac" list="facs" placeholder="e.g. Sauna, Air conditioning, EV charger" autocomplete="off"></label>
+      <datalist id="facs"></datalist>
+      <label>Property type<select id="cArch"></select></label>
+      <label>Rooms<input id="cRooms" type="number" min="3" max="1000" value="40"></label>
+      <label>Average rate (€/night)<input id="cAdr" type="number" min="20" max="2000"></label>
+      <label>Occupancy (%)<input id="cOcc" type="number" min="20" max="100" value="70"></label>
+      <label>Current review score<input id="cScore" type="number" min="5" max="10" step="0.1"><small>Basics matter more to lower scores.</small></label>
+    </div>
+    <div class="go"><button class="cta" id="goCheck">Check it</button><span class="hint" id="chErr"></span></div>
+  </div>
+  <div id="checkOut"></div>
+  <div class="browse">
+    <h2>All facilities</h2>
+    <p class="note">Every facility the study measured, for the property type above. Click one to check it.</p>
+    <div class="ctl"><input id="bQ" placeholder="Filter by name" autocomplete="off"><select id="bGroup"></select><select id="bSort"><option value="eff">Sort: score effect</option><option value="rate">Sort: rate premium</option><option value="prev">Sort: how common</option><option value="name">Sort: name</option></select></div>
+    <div class="scroll"><table><thead><tr><th>Facility</th><th>Group</th><th class="num">Score</th><th class="num">Rate</th><th class="num">Of the type</th><th>Evidence</th></tr></thead><tbody id="bRows"></tbody></table></div>
+  </div>
+</section>
+
+<!-- ============ mode: big decisions ============ -->
+<section id="formBig" class="hide">
+  <h2>Restaurant, spa &amp; co.</h2>
+  <div class="panel">
+    <label style="max-width:320px">Property type<select id="gArch"></select></label>
+  </div>
+  <div id="bigOut"></div>
 </section>
 
 <!-- ============ result ============ -->
@@ -202,6 +277,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
   <p class="sub" id="resSub" style="margin-bottom:18px"></p>
   <div class="stats" id="stats"></div>
   <div class="ruler" id="ruler"></div>
+  <div class="curve" id="curve"></div>
 
   <h2>Your top 3 moves</h2>
   <div class="moves" id="moves"></div>
