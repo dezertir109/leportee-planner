@@ -8,18 +8,24 @@
  *   the total     = (Σ effects + k × facility-count slope) × out-of-sample calibration,
  *                   capped at the archetype's median→top-decile facility gap
  *   rate uplift   = only A/B-graded rate effects, same calibration, capped likewise
- * Data: data/model.json (effects, costs, distributions) + data/<cc>.json (lean hotel layer).
+ * Data, per country: data/<cc>.model.json (effects, costs, distributions) + data/<cc>.json
+ * (lean hotel layer), loaded when its chip is picked.
  */
 "use strict";
 
 const UNLOCK_HASH = "ee3bb2f52127383f8930e82f7502b9c41c9a2fe647b9ed6dbfc7a6c0b3aee6d8";
 const SUB_URL = "https://www.leportee.com/subscribe";
 const EMBED_URL = "https://www.leportee.com/embed";
+// Each country is its own study (own facility list, price bands, archetypes), so each has its
+// own model file; nothing is pooled across borders.
 const COUNTRIES = [
-  { cc: "de", name: "Germany", live: true },
-  { cc: "fr", name: "France" }, { cc: "es", name: "Spain" },
-  { cc: "it", name: "Italy" }, { cc: "at", name: "Austria" },
+  { cc: "de", name: "Germany", adj: "German", eg: "Gasthof zur Post" },
+  { cc: "fr", name: "France", adj: "French", eg: "Hôtel de la Gare" },
+  { cc: "es", name: "Spain", adj: "Spanish", eg: "Hostal Central" },
+  { cc: "it", name: "Italy", adj: "Italian", eg: "Albergo Roma" },
+  { cc: "at", name: "Austria", adj: "Austrian", eg: "Gasthof Post" },
 ];
+let C = COUNTRIES[0];
 const BUY = new Set(["in_room", "property", "service", "policy"]);
 const KIND_LABEL = { in_room: "per room", property: "build", service: "service",
   policy: "policy", listing: "tick the box" };
@@ -59,19 +65,24 @@ let last = null;   // last computed plan, for sharing
 // data
 // ---------------------------------------------------------------------------------------
 
-async function load() {
-  const [m, d] = await Promise.all([
-    fetch("data/model.json").then((r) => r.json()),
-    fetch("data/de.json").then((r) => r.json()),
-  ]);
-  M = m;
-  D = d;
-  D.h = d.hotels.map((r, i) => ({
-    i, name: r[0], city: r[1], lat: r[2], lng: r[3], arch: M.archetypes[r[4]].name,
-    rating: r[5], reviews: r[6], subs: r[7], fac64: r[8], lname: (r[0] + " " + r[1]).toLowerCase(),
-  }));
-  D.towns = d.cities.map((c) => ({ name: c[0], lat: c[1], lng: c[2], n: c[3] }));
-  D.townByName = new Map(D.towns.map((t) => [t.name.toLowerCase(), t]));
+const cache = {};
+
+async function load(cc) {
+  if (!cache[cc]) {
+    const [m, d] = await Promise.all([
+      fetch(`data/${cc}.model.json`).then((r) => r.json()),
+      fetch(`data/${cc}.json`).then((r) => r.json()),
+    ]);
+    d.h = d.hotels.map((r, i) => ({
+      i, name: r[0], city: r[1], lat: r[2], lng: r[3], arch: m.archetypes[r[4]].name,
+      rating: r[5], reviews: r[6], subs: r[7], fac64: r[8], lname: (r[0] + " " + r[1]).toLowerCase(),
+    }));
+    d.towns = d.cities.map((c) => ({ name: c[0], lat: c[1], lng: c[2], n: c[3] }));
+    d.townByName = new Map(d.towns.map((t) => [t.name.toLowerCase(), t]));
+    cache[cc] = { m, d };
+  }
+  M = cache[cc].m;
+  D = cache[cc].d;
 }
 
 function facSet(h) {
@@ -99,7 +110,7 @@ function peersOf(lat, lng, archName, skip) {
     const p = D.h.filter((h) => h.arch === archName && h.i !== skip && km(lat, lng, h.lat, h.lng) <= R);
     if (p.length >= MIN_PEERS) return { list: p, label: `within ${R} km`, R };
   }
-  return { list: D.h.filter((h) => h.arch === archName && h.i !== skip), label: "across Germany", R: null };
+  return { list: D.h.filter((h) => h.arch === archName && h.i !== skip), label: `across ${C.name}`, R: null };
 }
 
 function prevalence(list) {
@@ -322,7 +333,7 @@ function show(p, ctx) {
     $("#resHead").innerHTML = `${esc(ctx.hotel.name)} <mark>${esc(ctx.hotel.city)}</mark>`;
     $("#resSub").textContent = `${ctx.archName} · ${ctx.hotel.rating.toFixed(1)} from ${ctx.hotel.reviews.toLocaleString("en-GB")} reviews · ${ctx.peers.list.length} competitors of the same type ${ctx.peers.label}.`;
     $("#stats").innerHTML =
-      stat(`Top ${Math.max(1, Math.round(100 - pctNow))}%`, `of ${ctx.archName.toLowerCase()} in Germany`) +
+      stat(`Top ${Math.max(1, Math.round(100 - pctNow))}%`, `of ${ctx.archName.toLowerCase()} in ${C.name}`) +
       stat(sgn(ctx.score - locMed, 1), `vs local median ${locMed.toFixed(1)}`, ctx.peers.label, ctx.score >= locMed ? "up" : "down") +
       stat(p.newScore.toFixed(2), "with the full plan", `${sgn(p.gain)} → top ${Math.max(1, Math.round(100 - pctNew))}%`, "up") +
       stat(eur(p.capex), "capex in the plan", `${p.k} additions within ${eur(ctx.budget)}`);
@@ -334,7 +345,7 @@ function show(p, ctx) {
     $("#resSub").textContent = `${ctx.peers.list.length} competitors of this type ${ctx.peers.label}, median score ${locMed.toFixed(1)}. A new property that matches the standard kit starts around that median.`;
     $("#stats").innerHTML =
       stat(String(ctx.peers.list.length), "local competitors", ctx.peers.label) +
-      stat(locMed.toFixed(1), "local median score", `the type's top 10% in Germany score ${M.dist[ctx.archName].pct[90].toFixed(1)}+`) +
+      stat(locMed.toFixed(1), "local median score", `the type's top 10% in ${C.name} score ${M.dist[ctx.archName].pct[90].toFixed(1)}+`) +
       stat(eur(p.kitCapex), "standard kit", `${p.kit.length} items for ${ctx.rooms} rooms`) +
       stat(p.newScore.toFixed(2), "with your differentiators", `${sgn(p.gain)} → top ${Math.max(1, Math.round(100 - pctNew))}%`, "up");
     ruler([{ s: locMed, label: "local median", cls: "loc" }, { s: p.newScore, label: "your plan", cls: "new" }]);
@@ -602,7 +613,7 @@ function renderBig() {
 // ---------------------------------------------------------------------------------------
 
 function setHash(obj) {
-  history.replaceState(null, "", "#" + new URLSearchParams(obj).toString());
+  history.replaceState(null, "", "#" + new URLSearchParams({ cc: C.cc, ...obj }).toString());
 }
 
 function wireMiniLock(root) {
@@ -645,7 +656,7 @@ function openSubscribe(campaign) {
 }
 
 function writeHash(ctx) {
-  const p = new URLSearchParams();
+  const p = new URLSearchParams({ cc: C.cc });
   if (ctx.hotel) { p.set("m", "e"); p.set("h", ctx.hotel.name); p.set("c", ctx.hotel.city); }
   else { p.set("m", "n"); p.set("t", ctx.town.name); p.set("a", ctx.archName); p.set("adr", ctx.adr); p.set("occ", ctx.occ); }
   p.set("r", ctx.rooms); p.set("b", ctx.budget);
@@ -683,19 +694,63 @@ function shareText() {
   if (!last) return "";
   if (last.hotel) {
     const top = Math.max(1, Math.round(100 - pctOf(last.archName, last.hotel.rating)));
-    return `${last.hotel.name} (${last.hotel.city}) is in the top ${top}% of ${last.archName.toLowerCase()} in Germany on Booking.com. Here's what it should add next:`;
+    return `${last.hotel.name} (${last.hotel.city}) is in the top ${top}% of ${last.archName.toLowerCase()} in ${C.name} on Booking.com. Here's what it should add next:`;
   }
-  return `What a new ${last.archName.toLowerCase()} in ${last.town.name} should be built with, from 25,000 Booking.com listings:`;
+  return `What a new ${last.archName.toLowerCase()} in ${last.town.name} should be built with, from ${D.h.length.toLocaleString("en-GB")} ${C.adj} Booking.com listings:`;
 }
 
 // ---------------------------------------------------------------------------------------
 
+// fill every country-dependent part of the page from the loaded model + hotel layer
+function populate() {
+  document.querySelectorAll("#countries .chip").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.dataset.cc === C.cc)));
+  $("#kCountry").textContent = C.name;
+  $("#nHotels").textContent = D.h.length.toLocaleString("en-GB");
+  $("#adj").textContent = C.adj;
+  $("#q").placeholder = `Hotel name, e.g. ${C.eg}`;
+  $("#qNote").textContent = `${C.name} · properties with 20+ reviews.`;
+  $("#built").textContent = `Data built ${D.built}`;
+  $("#towns").innerHTML = D.towns.map((t) => `<option value="${esc(t.name)}">${t.n} hotels</option>`).join("");
+  $("#archs").innerHTML = M.archetypes.map((a) => `<button class="arch" data-a="${esc(a.name)}" aria-pressed="false"><b>${esc(a.name)}</b><span>${esc(a.blurb)}</span></button>`).join("");
+  document.querySelectorAll(".arch").forEach((b) => b.addEventListener("click", () => setArch(b.dataset.a)));
+
+  // check one facility + big decisions
+  const archOpts = M.archetypes.map((a) => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join("");
+  $("#cArch").innerHTML = archOpts;
+  $("#gArch").innerHTML = archOpts;
+  $("#cArch").value = $("#gArch").value = "Midscale / standard";
+  checkDefaults();
+  $("#facs").innerHTML = M.facilities.map((f) => `<option value="${esc(f.name)}"></option>`).join("");
+  const groups = [...new Set(M.facilities.map((f) => f.group).filter(Boolean))].sort();
+  $("#bGroup").innerHTML = `<option value="">All groups</option>` + groups.map((g) => `<option>${esc(g)}</option>`).join("");
+}
+
+// another country: its own hotels and facility list, so anything half-done is cleared
+async function setCountry(cc) {
+  const next = COUNTRIES.find((c) => c.cc === cc);
+  if (!next) return;
+  document.body.classList.add("loading");
+  try {
+    await load(cc);
+  } finally {
+    document.body.classList.remove("loading");
+  }
+  C = next;
+  store.set("lp_planner_cc", cc);
+  arch = null; picked = null; last = null;
+  for (const s of ["#q", "#town", "#cFac", "#nAdr"]) $(s).value = "";
+  $("#hits")?.classList.add("hide");
+  $("#result").classList.add("hide");
+  populate();
+  if (mode) setMode(mode);
+}
+
 async function init() {
   const cc = $("#countries");
   for (const c of COUNTRIES) {
-    const b = el(c.live ? "button" : "a", c.live ? { class: "chip", "aria-pressed": "true" }
-      : { class: "chip soon", href: `${SUB_URL}?utm_source=planner&utm_medium=tool&utm_campaign=waitlist-${c.cc}`, target: "_blank", rel: "noopener", title: `Subscribe to hear when ${c.name} goes live` },
-      c.live ? `${c.name} · live` : `${c.name} · coming, get notified`);
+    const b = el("button", { class: "chip", "data-cc": c.cc, "aria-pressed": "false" }, c.name);
+    b.addEventListener("click", () => { if (c.cc !== C.cc) setCountry(c.cc).then(() => setHash({})); });
     cc.appendChild(b);
   }
   document.querySelectorAll(".mode").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
@@ -714,29 +769,6 @@ async function init() {
   });
   let t;
   $("#q").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => search(e.target.value), 120); });
-  applyLock();
-
-  try {
-    await load();
-  } catch (e) {
-    $(".sub").insertAdjacentHTML("afterend", `<p class="err">The data did not load. Refresh the page.</p>`);
-    return;
-  }
-  $("#nHotels").textContent = D.h.length.toLocaleString("en-GB");
-  $("#built").textContent = `Data built ${D.built}`;
-  $("#towns").innerHTML = D.towns.map((t) => `<option value="${esc(t.name)}">${t.n} hotels</option>`).join("");
-  $("#archs").innerHTML = M.archetypes.map((a) => `<button class="arch" data-a="${esc(a.name)}" aria-pressed="false"><b>${esc(a.name)}</b><span>${esc(a.blurb)}</span></button>`).join("");
-  document.querySelectorAll(".arch").forEach((b) => b.addEventListener("click", () => setArch(b.dataset.a)));
-
-  // check one facility + big decisions
-  const archOpts = M.archetypes.map((a) => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join("");
-  $("#cArch").innerHTML = archOpts;
-  $("#gArch").innerHTML = archOpts;
-  $("#cArch").value = $("#gArch").value = "Midscale / standard";
-  checkDefaults();
-  $("#facs").innerHTML = M.facilities.map((f) => `<option value="${esc(f.name)}"></option>`).join("");
-  const groups = [...new Set(M.facilities.map((f) => f.group).filter(Boolean))].sort();
-  $("#bGroup").innerHTML = `<option value="">All groups</option>` + groups.map((g) => `<option>${esc(g)}</option>`).join("");
   $("#goCheck").addEventListener("click", renderCheck);
   $("#cFac").addEventListener("change", () => { if (facIndex($("#cFac").value) >= 0) renderCheck(); });
   $("#cArch").addEventListener("change", () => { checkDefaults(); renderBrowse(); if (facIndex($("#cFac").value) >= 0) renderCheck(); });
@@ -744,6 +776,18 @@ async function init() {
   $("#bGroup").addEventListener("change", renderBrowse);
   $("#bSort").addEventListener("change", renderBrowse);
   $("#gArch").addEventListener("change", renderBig);
+  applyLock();
+
+  // a shared link names its country; otherwise the visitor's last choice, else Germany
+  const want = new URLSearchParams(location.hash.slice(1)).get("cc") || store.get("lp_planner_cc") || "de";
+  C = COUNTRIES.find((c) => c.cc === want) || COUNTRIES[0];
+  try {
+    await load(C.cc);
+  } catch (e) {
+    $(".sub").insertAdjacentHTML("afterend", `<p class="err">The data did not load. Refresh the page.</p>`);
+    return;
+  }
+  populate();
 
   if (location.hash.length > 1) readHash();
 }

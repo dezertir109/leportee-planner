@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hotel Upgrade Finder | Le Portée</title>
-<meta name="description" content="What should your hotel add next? A free upgrade finder built on 25,000 German Booking.com listings and what actually moves their review scores, for a new property or one you already run.">
+<meta name="description" content="What should your hotel add next? A free upgrade finder built on 118,000 Booking.com listings in Germany, France, Spain, Italy and Austria and what actually moves their review scores, for a new property or one you already run.">
 <meta property="og:title" content="What should your hotel add next? | Le Portée Hotel Upgrade Finder">
-<meta property="og:description" content="Built on 25,000 German Booking.com listings: where a property ranks, what its competitors have, which additions actually move the score, and whether one facility is worth buying.">
+<meta property="og:description" content="Built on 118,000 Booking.com listings in five countries: where a property ranks, what its competitors have, which additions actually move the score, and whether one facility is worth buying.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://planner.leportee.com/">
 <meta property="og:image" content="https://planner.leportee.com/og.png">
@@ -47,8 +47,8 @@ section{margin-bottom:40px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;align-items:center}
 .chip{border:2px solid var(--ink);background:transparent;color:var(--ink);padding:6px 15px;border-radius:999px;cursor:pointer;font:600 .8rem var(--head);text-decoration:none}
 .chip[aria-pressed=true]{background:var(--ink);color:var(--paper)}
-.chip.soon{border-style:dashed;color:var(--mute)}
-.chip.soon:hover{color:var(--orange-ink);border-color:var(--orange)}
+body.loading{cursor:progress}
+body.loading main{opacity:.55;transition:opacity .15s}
 /* mode tiles */
 .modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .mode{position:relative;text-align:left;cursor:pointer;border:2px solid var(--ink);border-radius:12px;background:var(--card);color:var(--ink);padding:20px 20px 18px;transition:transform .12s,box-shadow .12s;font:inherit}
@@ -187,7 +187,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
 <p class="kicker">Hotel Upgrade Finder · <span id="kCountry">Germany</span></p>
 <h1>What should your hotel <mark>add next</mark>?</h1>
-<p class="sub">Built on <b id="nHotels">25,000</b> German Booking.com listings and what actually moves their review scores, controlled for price, class, size and location. Plan a property, look up your own, or check a single facility before you buy it. Free, no login.</p>
+<p class="sub">Built on <b id="nHotels">25,000</b> <span id="adj">German</span> Booking.com listings and what actually moves their review scores, controlled for price, class, size and location. Plan a property, look up your own, or check a single facility before you buy it. Free, no login.</p>
 
 <div class="chips" id="countries" aria-label="Country"></div>
 
@@ -224,7 +224,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 <section id="formExisting" class="hide">
   <h2>Your property</h2>
   <div class="panel">
-    <label>Find your hotel<input id="q" placeholder="Hotel name, e.g. Gasthof zur Post" autocomplete="off"><small>Germany only for now · properties with 20+ reviews.</small></label>
+    <label>Find your hotel<input id="q" placeholder="Hotel name, e.g. Gasthof zur Post" autocomplete="off"><small id="qNote">Germany · properties with 20+ reviews.</small></label>
     <ul class="results hide" id="hits" role="listbox"></ul>
     <div id="picked" class="picked hide"></div>
     <div class="grid" style="margin-top:16px">
@@ -309,7 +309,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
 <footer class="foot">
   <div class="note">
-    <b>How this works.</b> Effects are multivariate estimates from Booking.com listings scraped in October 2026: each facility's association with the review score holding price, star class, size, review volume, postcode region, local market density and the number of facilities listed constant, with errors clustered by city. They are observational, not guarantees; only effects that survive false-discovery correction and a city-cluster bootstrap are used. Costs are indicative German mid-market figures. The full method is in <a href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool&amp;utm_campaign=method" rel="noopener">Le Portée</a>.
+    <b>How this works.</b> Effects are multivariate estimates from Booking.com listings scraped in October 2026: each facility's association with the review score holding price, star class, size, review volume, postcode region, local market density and the number of facilities listed constant, with errors clustered by city. They are observational, not guarantees; only effects that survive false-discovery correction and a city-cluster bootstrap are used. Each country is estimated on its own listings, nothing is pooled across borders. Costs are indicative German mid-market figures, used for every country. The full method is in <a href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool&amp;utm_campaign=method" rel="noopener">Le Portée</a>.
     <br><br>Hotel data comes from public Booking.com listings: name, town, review scores and the facilities a property lists. No prices or contact details are shown. Want a property taken out? Reply to any Le Portée email.
   </div>
   <div class="note"><a href="https://sources.leportee.com/?utm_source=planner" rel="noopener">Source Library</a><br><a href="https://www.leportee.com/?utm_source=planner&amp;utm_medium=tool" rel="noopener">Le Portée newsletter</a><br><span id="built"></span></div>

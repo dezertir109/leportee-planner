@@ -7,14 +7,18 @@ the only third-party request is the Substack subscribe form, loaded when someone
 
 - `index.html` · `app.js` — the page and its arithmetic (mirrors the research dashboard's
   /planner page in `mishka-research`)
-- `data/model.json` · `data/de.json` — written by `mishka-research/analysis/planner_export.py`;
-  never edit by hand
+- `data/<cc>.model.json` · `data/<cc>.json` — one pair per country (de fr es it at), each its
+  own study, written by `mishka-research/analysis/planner_export.py`; never edit by hand
 - `og.png` — the link preview
 
 ## Refresh the data
 
 ```bash
-cd ~/mishka-research && .venv/bin/python3 analysis/planner_export.py --out ~/leportee-planner/data
+cd ~/mishka-research
+for cc in de fr es it at; do
+    lake=data/countries/$cc/lake; [ $cc = de ] && lake=data/lake
+    LAKE_DIR=$PWD/$lake .venv/bin/python3 analysis/planner_export.py --out ~/leportee-planner/data --country $cc
+done
 cd ~/leportee-planner && git add -A && git commit -m "data: refresh" && git push
 ```
 
