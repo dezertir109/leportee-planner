@@ -1,0 +1,3 @@
+# per-hotel layers (data/<cc>.json) were taken off the public site on 2026-10-27; planner_export.py
+# still writes them, so they are ignored here and must never be committed again
+data/??.json

@@ -68,17 +68,11 @@ let last = null;   // last computed plan, for sharing
 const cache = {};
 
 async function load(cc) {
+  // Model only: the per-hotel layer was taken off the public site on 2026-10-27 (database
+  // right risk). The hotel modes stay in the code but are no longer reachable.
   if (!cache[cc]) {
-    const [m, d] = await Promise.all([
-      fetch(`data/${cc}.model.json`).then((r) => r.json()),
-      fetch(`data/${cc}.json`).then((r) => r.json()),
-    ]);
-    d.h = d.hotels.map((r, i) => ({
-      i, name: r[0], city: r[1], lat: r[2], lng: r[3], arch: m.archetypes[r[4]].name,
-      rating: r[5], reviews: r[6], subs: r[7], fac64: r[8], lname: (r[0] + " " + r[1]).toLowerCase(),
-    }));
-    d.towns = d.cities.map((c) => ({ name: c[0], lat: c[1], lng: c[2], n: c[3] }));
-    d.townByName = new Map(d.towns.map((t) => [t.name.toLowerCase(), t]));
+    const m = await fetch(`data/${cc}.model.json`).then((r) => r.json());
+    const d = { h: [], towns: [], townByName: new Map(), built: m.built };
     cache[cc] = { m, d };
   }
   M = cache[cc].m;
@@ -666,6 +660,7 @@ function writeHash(ctx) {
 function readHash() {
   const p = new URLSearchParams(location.hash.slice(1));
   const m = p.get("m");
+  if (m === "e" || m === "n") return;   // hotel modes retired: old share links open the menu
   if (m === "e") {
     const h = D.h.find((x) => x.name === p.get("h") && x.city === p.get("c"));
     if (!h) return;
@@ -706,7 +701,7 @@ function populate() {
   document.querySelectorAll("#countries .chip").forEach((b) =>
     b.setAttribute("aria-pressed", String(b.dataset.cc === C.cc)));
   $("#kCountry").textContent = C.name;
-  $("#nHotels").textContent = D.h.length.toLocaleString("en-GB");
+  $("#nHotels").textContent = Object.values(M.dist).reduce((t, x) => t + (x.n || 0), 0).toLocaleString("en-GB");
   $("#adj").textContent = C.adj;
   $("#q").placeholder = `Hotel name, e.g. ${C.eg}`;
   $("#qNote").textContent = `${C.name} · properties with 20+ reviews.`;

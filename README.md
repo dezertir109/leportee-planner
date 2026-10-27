@@ -7,8 +7,11 @@ the only third-party request is the Substack subscribe form, loaded when someone
 
 - `index.html` · `app.js` — the page and its arithmetic (mirrors the research dashboard's
   /planner page in `mishka-research`)
-- `data/<cc>.model.json` · `data/<cc>.json` — one pair per country (de fr es it at), each its
-  own study, written by `mishka-research/analysis/planner_export.py`; never edit by hand
+- `data/<cc>.model.json` — one per country (de fr es it at), each its own study, written by
+  `mishka-research/analysis/planner_export.py`; never edit by hand. **No per-hotel data since
+  2026-10-27**: the export also writes `data/<cc>.json` (the hotel layer); it is git-ignored and
+  must not be published (EU database-right risk, see the legality research in Drive). Only the
+  "Check one facility" and "Restaurant, spa & co." modes remain; the full planner is the paid site.
 - `og.png` — the link preview
 
 ## Refresh the data
